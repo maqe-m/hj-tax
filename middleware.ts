@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { verifyToken } from '@/lib/auth/jwt';
 
 const publicPaths = ['/login', '/register', '/api/auth'];
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Allow public paths
@@ -24,6 +25,13 @@ export function middleware(request: NextRequest) {
   const token = request.cookies.get('token')?.value;
 
   if (!token) {
+    const loginUrl = new URL('/login', request.url);
+    return NextResponse.redirect(loginUrl);
+  }
+
+  // Verify JWT with jose (Edge-compatible)
+  const payload = await verifyToken(token);
+  if (!payload) {
     const loginUrl = new URL('/login', request.url);
     return NextResponse.redirect(loginUrl);
   }

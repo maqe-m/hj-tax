@@ -39,7 +39,7 @@ export async function POST(request: Request) {
     `;
 
     const user = result.rows[0];
-    const token = signToken({ userId: user.id, email: user.email });
+    const token = await signToken({ userId: user.id, email: user.email });
 
     const response = NextResponse.json({ user });
     response.cookies.set('token', token, {
