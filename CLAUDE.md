@@ -21,6 +21,15 @@
 Next.js 15 App Router, TypeScript, Tailwind, Vercel Postgres, Anthropic SDK, JWT auth.
 
 ### Tax code loading strategy
-- `/tax-code/*.md` — kazakhstan tax code split by chapters/topics
-- `lib/tax-code-loader.ts` — keyword-based section retriever
+- `/tax-code/раздел-NN-<slug>/глава-NN-<slug>.md` — tax code split by chapter, one file per глава
+- `lib/tax-code-loader.ts` — keyword-based section retriever (walks directories recursively)
 - AI endpoint loads only relevant sections into system prompt per request (NOT full code every time)
+
+## Tax code parser
+
+- Source PDF: `/tax-code/_source/nk-rk-2026.pdf` (not committed unless user adds it)
+- Parser script: `scripts/parse-tax-code.ts`
+- Run: `npm run parse-tax-code`
+- Output: `/tax-code/раздел-NN-<slug>/глава-NN-<slug>.md` files with frontmatter
+- Idempotent — safe to re-run; deletes and recreates `раздел-*` folders
+- Loader (`lib/tax-code-loader.ts`) reads all files recursively

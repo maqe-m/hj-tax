@@ -1,36 +1,54 @@
-import { readdirSync, readFileSync } from 'fs';
-import { join } from 'path';
+import { readdirSync, readFileSync, statSync } from 'fs';
+import { join, relative } from 'path';
 import matter from 'gray-matter';
 
 export interface TaxCodeSection {
   id: string;
   title: string;
   keywords: string[];
-  articles: number[];
+  articles: string[];
   content: string;
   filePath: string;
 }
 
 const TAX_CODE_DIR = join(process.cwd(), 'tax-code');
 
+function walkMdFiles(dir: string): string[] {
+  const results: string[] = [];
+  try {
+    const entries = readdirSync(dir);
+    for (const entry of entries) {
+      if (entry.startsWith('_') || entry === 'README.md') continue;
+      const fullPath = join(dir, entry);
+      const stat = statSync(fullPath);
+      if (stat.isDirectory()) {
+        results.push(...walkMdFiles(fullPath));
+      } else if (entry.endsWith('.md')) {
+        results.push(fullPath);
+      }
+    }
+  } catch {
+    // directory doesn't exist or is unreadable
+  }
+  return results;
+}
+
 export function loadAllSections(): TaxCodeSection[] {
   try {
-    const files = readdirSync(TAX_CODE_DIR).filter(
-      (f) => f.endsWith('.md') && !f.startsWith('_') && f !== 'README.md'
-    );
+    const files = walkMdFiles(TAX_CODE_DIR);
 
-    return files.map((file) => {
-      const filePath = join(TAX_CODE_DIR, file);
-      const raw = readFileSync(filePath, 'utf-8');
+    return files.map((fullPath) => {
+      const raw = readFileSync(fullPath, 'utf-8');
       const { data, content } = matter(raw);
+      const relPath = relative(TAX_CODE_DIR, fullPath);
 
       return {
-        id: data.id || file.replace('.md', ''),
-        title: data.title || '',
+        id: data.id || relPath.replace('.md', ''),
+        title: data.chapter_title || data.title || '',
         keywords: data.keywords || [],
-        articles: data.articles || [],
+        articles: (data.articles || []).map(String),
         content: content.trim(),
-        filePath: file,
+        filePath: relPath,
       };
     });
   } catch {
@@ -46,13 +64,20 @@ export function findRelevantSections(
   const queryLower = query.toLowerCase();
   const queryWords = queryLower.split(/\s+/).filter((w) => w.length > 2);
 
-  // Extract article numbers from query (e.g., "статья 697" or "ст. 697")
-  const articleNumbers: number[] = [];
-  const articleMatch = query.match(/(?:стать[яюи]|ст\.?)\s*(\d+)/gi);
+  // Extract article numbers from query (e.g., "статья 697", "ст. 697", or standalone "697")
+  const articleNumbers: string[] = [];
+  const articleMatch = query.match(/(?:стать[яюи]|ст\.?)\s*(\d+(?:-\d+)?)/gi);
   if (articleMatch) {
     for (const m of articleMatch) {
-      const num = m.match(/(\d+)/);
-      if (num) articleNumbers.push(parseInt(num[1]));
+      const num = m.match(/(\d+(?:-\d+)?)/);
+      if (num) articleNumbers.push(num[1]);
+    }
+  }
+  // Also match standalone numbers (3+ digits) as potential article references
+  const standaloneNums = query.match(/\b(\d{3,}(?:-\d+)?)\b/g);
+  if (standaloneNums) {
+    for (const n of standaloneNums) {
+      if (!articleNumbers.includes(n)) articleNumbers.push(n);
     }
   }
 
@@ -75,7 +100,7 @@ export function findRelevantSections(
 
     // Article number matching
     for (const articleNum of articleNumbers) {
-      if (section.articles.includes(articleNum)) {
+      if (section.articles.some((a) => a === articleNum)) {
         score += 20;
       }
     }
