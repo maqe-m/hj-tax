@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -91,11 +90,8 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <p className="mt-6 text-center text-sm text-gray-500">
-          Нет аккаунта?{' '}
-          <Link href="/register" className="text-blue-600 hover:underline">
-            Зарегистрироваться
-          </Link>
+        <p className="mt-6 text-center text-sm text-gray-400">
+          KZ Tax Advisor © 2026
         </p>
       </div>
     </div>
