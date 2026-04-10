@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { verifyToken } from '@/lib/auth/jwt';
+import { jwtVerify } from 'jose';
 
 const publicPaths = ['/login', '/register', '/api/auth'];
 
@@ -29,9 +29,11 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  // Verify JWT with jose (Edge-compatible)
-  const payload = await verifyToken(token);
-  if (!payload) {
+  // Verify JWT with jose directly (Edge-compatible, no lib/ imports)
+  try {
+    const secret = new TextEncoder().encode(process.env.JWT_SECRET || '');
+    await jwtVerify(token, secret);
+  } catch {
     const loginUrl = new URL('/login', request.url);
     return NextResponse.redirect(loginUrl);
   }
