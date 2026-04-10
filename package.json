@@ -17,7 +17,7 @@
     "gray-matter": "^4.0.3",
     "jose": "^6.2.2",
     "next": "^15.5.15",
-    "pdf-parse": "^2.4.5",
+    "pdf-parse": "^1.1.0",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "react-markdown": "^10.1.0",
