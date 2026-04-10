@@ -2,6 +2,20 @@ import { NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
 import { verifyPassword } from '@/lib/auth/password';
 import { signToken } from '@/lib/auth/jwt';
+import { initializeDatabase } from '@/lib/db/init';
+
+let dbInitialized = false;
+
+async function ensureDb() {
+  if (dbInitialized) return;
+  try {
+    await sql`SELECT 1 FROM users LIMIT 1`;
+    dbInitialized = true;
+  } catch {
+    await initializeDatabase();
+    dbInitialized = true;
+  }
+}
 
 export async function POST(request: Request) {
   try {
@@ -13,6 +27,8 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
+
+    await ensureDb();
 
     const result = await sql`
       SELECT id, email, password_hash, full_name, role FROM users WHERE email = ${email}
