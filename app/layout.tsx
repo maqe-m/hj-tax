@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import Navbar from "./components/navbar";
+import AuthGuard from "./components/auth-guard";
 
 export const metadata: Metadata = {
   title: "KZ Tax Advisor",
@@ -15,8 +16,10 @@ export default function RootLayout({
   return (
     <html lang="ru" className="h-full antialiased">
       <body className="min-h-full flex flex-col font-sans bg-gray-50">
-        <Navbar />
-        <main className="flex-1">{children}</main>
+        <AuthGuard>
+          <Navbar />
+          <main className="flex-1">{children}</main>
+        </AuthGuard>
       </body>
     </html>
   );
